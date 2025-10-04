@@ -1,0 +1,52 @@
+[
+  {
+    "playerId": "203081",
+    "playerName": "Shai Gilgeous-Alexander",
+    "team": "OKC",
+    "position": "PG",
+    "season": 2025,
+    "points": 2484,
+    "assists": 486,
+    "totalRb": 379
+  },
+  {
+    "playerId": "203507",
+    "playerName": "Giannis Antetokounmpo",
+    "team": "MIL",
+    "position": "PF",
+    "season": 2025,
+    "points": 2036,
+    "assists": 433,
+    "totalRb": 798
+  },
+  {
+    "playerId": "203999",
+    "playerName": "Nikola Jokić",
+    "team": "DEN",
+    "position": "C",
+    "season": 2025,
+    "points": 2071,
+    "assists": 716,
+    "totalRb": 892
+  },
+  {
+    "playerId": "1629001",
+    "playerName": "Anthony Edwards",
+    "team": "MIN",
+    "position": "SG",
+    "season": 2025,
+    "points": 2177,
+    "assists": 359,
+    "totalRb": 450
+  },
+  {
+    "playerId": "1628369",
+    "playerName": "Jayson Tatum",
+    "team": "BOS",
+    "position": "PF",
+    "season": 2025,
+    "points": 1932,
+    "assists": 431,
+    "totalRb": 623
+  }
+]
