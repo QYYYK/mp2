@@ -33,7 +33,11 @@ jobs:
       - name: Build site
         run: npm run build
         env:
-          CI: false      # 关键：避免 CRA 在 CI 下把 warning 当 error
+          CI: false   # 避免 CRA 在 CI 下把 warning 当 error
+
+      # 关键：给 GitHub Pages 增加 404 fallback，刷新子路由不报 404
+      - name: Add 404 fallback
+        run: cp build/index.html build/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

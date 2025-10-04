@@ -1,22 +1,15 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import ListPage from './pages/ListPage/ListPage';
-import GalleryPage from './pages/GalleryPage/GalleryPage';
-import DetailPage from './pages/DetailPage/DetailPage';
-import NavBar from './components/NavBar/NavBar';
+import AppRoutes from './routes/AppRoutes';
 
-function App() {
+// 如果文件在 src/store/CatalogContext.tsx 就用下面这个
+import { CatalogProvider } from './store/CatalogContext';
+// 如果你的文件在 src/CatalogContext.tsx，则改成：
+// import { CatalogProvider } from './CatalogContext';
+
+export default function App() {
   return (
-    <>
-      <NavBar />
-      <Routes>
-        <Route path="/" element={<Navigate to="/list" replace />} />
-        <Route path="/list" element={<ListPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/detail/:id" element={<DetailPage />} />
-      </Routes>
-    </>
+    <CatalogProvider>
+      <AppRoutes />
+    </CatalogProvider>
   );
 }
-
-export default App;

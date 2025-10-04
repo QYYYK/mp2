@@ -1,108 +1,109 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useCatalog } from '../../store/CatalogContext';
-import { fetchPlayerAdvanced, fetchSingleTotals } from '../../api/service';
-import type { CatalogItem, PlayerAdvanced } from '../../api/types';
-import { getPlayerImageUrl, DEFAULT_PLAYER_IMAGE } from '../../utils/imageUtils';
+import React from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import styles from './DetailPage.module.css';
 
+import { useCatalog } from '../../store/CatalogContext';
+import { getPlayerImageUrl, DEFAULT_PLAYER_IMAGE } from '../../utils/imageUtils';
+import type { CatalogItem } from '../../api/types';
+
 export default function DetailPage() {
-  const params = useParams();
-  const location = useLocation();
-  // 1) 主路径参数
-  let playerId = (params.playerId ?? '').trim();
-  // 2) 兜底：从 URL 最后一段再解析一次
-  if (!playerId && location.pathname.includes('/detail/')) {
-    const last = location.pathname.split('/').filter(Boolean).pop();
-    if (last) playerId = decodeURIComponent(last);
+  // 兼容两种参数名
+  const { id, playerId } = useParams();
+  const pid = (id ?? playerId) ?? '';
+  const nav = useNavigate();
+
+  const { filtered, raw, loading } = useCatalog();
+
+  if (loading) {
+    return (
+      <div className="container">
+        <Link className={styles.back} to="..">← Back</Link>
+        <div className={styles.card}>Loading…</div>
+      </div>
+    );
   }
 
-  const { filtered, season } = useCatalog();
-  const navigate = useNavigate();
+  const item =
+    filtered.find((x: CatalogItem) => x.playerId === pid) ??
+    raw.find((x: CatalogItem) => x.playerId === pid);
 
-  const [item, setItem] = useState<CatalogItem | null>(null);
-  const [adv, setAdv] = useState<PlayerAdvanced | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
+  if (!item) {
+    return (
+      <div className="container">
+        <Link className={styles.back} to="..">← Back</Link>
+        <div className={styles.card}>No data for this player.</div>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setErr(null);
-      try {
-        if (!playerId) {
-          setErr('No player ID provided');
-          return;
-        }
-        // 列表上下文优先
-        let found = filtered.find(x => x.playerId?.toLowerCase() === playerId.toLowerCase()) ?? null;
+  
+  const adv = item as unknown as Record<'ts' | 'usg' | 'vorp' | 'ws', number | undefined>;
 
-        // 直接 URL 打开时单拉一条
-        if (!found) {
-          found = await fetchSingleTotals(season, playerId);
-        }
-        if (!found) {
-          setErr('Player not found');
-          return;
-        }
-        setItem(found);
-
-        // 高阶数据可选
-        try {
-          const rows = await fetchPlayerAdvanced({ season, playerId });
-          if (rows?.length) setAdv(rows[0]);
-        } catch {}
-      } catch (e: any) {
-        setErr(e?.message || 'Failed to load');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [playerId, season, filtered]);
-
-  const index = useMemo(
-    () => filtered.findIndex(x => x.playerId?.toLowerCase() === playerId.toLowerCase()),
-    [filtered, playerId]
-  );
-  const prevId = index > 0 ? filtered[index - 1]?.playerId : null;
-  const nextId = index >= 0 && index < filtered.length - 1 ? filtered[index + 1]?.playerId : null;
-
-  if (loading) return <div className="container"><p>Loading…</p></div>;
-  if (err) return <div className="container"><p>{err}</p></div>;
-  if (!item) return <div className="container"><p>Player not found</p></div>;
+  const list: CatalogItem[] = (filtered.length ? filtered : raw) as CatalogItem[];
+  const idx = list.findIndex((x: CatalogItem) => x.playerId === item.playerId);
+  const prev = idx > 0 ? list[idx - 1] : null;
+  const next = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
 
   return (
     <div className="container">
-      <Link to="/">← Back</Link>
+      <Link className={styles.back} to="..">← Back</Link>
+
       <div className={styles.wrap}>
-        <div className={`${styles.left} card`}>
+        {/* 左侧：头像卡片 */}
+        <div className={`${styles.card} ${styles.hero}`}>
           <img
+            className={styles.photo}
             src={getPlayerImageUrl(item.playerId)}
             alt={item.name}
+            loading="lazy"
             onError={(e) => {
               const img = e.currentTarget as HTMLImageElement;
-              if (!img.src.includes(DEFAULT_PLAYER_IMAGE)) img.src = DEFAULT_PLAYER_IMAGE;
+              if (!img.src.includes(DEFAULT_PLAYER_IMAGE)) {
+                img.src = DEFAULT_PLAYER_IMAGE;
+              }
             }}
           />
         </div>
-        <div className={styles.right}>
-          <h1>{item.name}</h1>
-          <p><b>Team:</b> {item.team} &nbsp; <b>Pos:</b> {item.position ?? '-'}</p>
-          <p><b>Season:</b> {item.season}</p>
-          <p><b>PTS:</b> {item.points ?? '-'} &nbsp; <b>AST:</b> {item.assists ?? '-'} &nbsp; <b>REB:</b> {item.rebounds ?? '-'}</p>
 
-          {adv && (
-            <div className={styles.adv}>
-              <div><b>TS%:</b> {adv.tsPercent ?? '-'}</div>
-              <div><b>USG%:</b> {adv.usgPercent ?? '-'}</div>
-              <div><b>VORP:</b> {adv.vorp ?? '-'}</div>
-              <div><b>WS:</b> {adv.winShares ?? '-'}</div>
+        {/* 右侧：信息卡片 */}
+        <div className={styles.card}>
+          <h1 className={styles.title}>{item.name}</h1>
+
+          <div className={styles.kv}>
+            <div>
+              <b>Team:</b> {item.team}
+              &nbsp;&nbsp; <b>Pos:</b> {item.position ?? '-'}
             </div>
-          )}
+            <div><b>Season:</b> {item.season}</div>
+          </div>
 
-          <div className={styles.nav}>
-            <button className="btn" disabled={!prevId} onClick={() => prevId && (navigate(`/detail/${encodeURIComponent(prevId)}`), window.scrollTo(0,0))}>⟵ Prev</button>
-            <button className="btn" disabled={!nextId} onClick={() => nextId && (navigate(`/detail/${encodeURIComponent(nextId)}`), window.scrollTo(0,0))}>Next ⟶</button>
+          <div className={styles.stats}>
+            <div>
+              <b>PTS:</b> {item.points ?? '-'}
+              &nbsp;&nbsp; <b>AST:</b> {item.assists ?? '-'}
+              &nbsp;&nbsp; <b>REB:</b> {item.rebounds ?? '-'}
+            </div>
+            <div><b>TS%:</b> {adv['ts'] ?? '-'}</div>
+            <div><b>USG%:</b> {adv['usg'] ?? '-'}</div>
+            <div><b>VORP:</b> {adv['vorp'] ?? '-'}</div>
+            <div><b>WS:</b> {adv['ws'] ?? '-'}</div>
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+            <button
+              className="btn"
+              onClick={() => prev && nav(`/detail/${encodeURIComponent(prev.playerId)}`)}
+              disabled={!prev}
+            >
+              ← Prev
+            </button>
+            <button
+              className="btn"
+              onClick={() => next && nav(`/detail/${encodeURIComponent(next.playerId)}`)}
+              disabled={!next}
+            >
+              Next →
+            </button>
           </div>
         </div>
       </div>
